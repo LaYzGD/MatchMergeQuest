@@ -44,8 +44,56 @@ public class GridSystem<T>
         return _positionValuePairs.Keys.ToList();
     }
 
+    public Vector2[,] GetPositionsAsArray() 
+    {
+        Vector2[,] positionsArray = new Vector2[_height,_width];
+
+        float currentXPos = _origin.x;
+        float currentYPos = _origin.y;
+
+        for (int y = 0; y < _height; y++)
+        {
+            for (int x = 0; x < _width; x++)
+            {
+                Vector2 pos = new Vector2(currentXPos + (_cellSize / 2), currentYPos);
+                positionsArray[y, x] = pos;
+                currentXPos += _cellSize;
+            }
+            currentXPos = _origin.x;
+            currentYPos += _cellSize;
+        }
+
+        return positionsArray;
+    }
+
+    public void TryGetCoordinates(Vector2 mousePos, out Vector2 returnValue, out bool value) 
+    {
+        value = false;
+        returnValue = Vector2.zero;
+
+        foreach (var pos in _positionValuePairs.Keys) 
+        {
+            var leftCellSide = pos.x - _cellSize / 2;
+            var rightCellSide = pos.x + _cellSize / 2;
+            var downCellSide = pos.y - _cellSize / 2;
+            var upCellSide = pos.y + _cellSize / 2;
+            if (leftCellSide <= mousePos.x && mousePos.x <= rightCellSide 
+                && downCellSide <= mousePos.y && mousePos.y <= upCellSide)
+            {
+                value = true;
+                returnValue = pos; 
+                break;
+            }
+        }
+    }
+
     public void SetValue(Vector2 coordinates, T value) 
     {
         _positionValuePairs[coordinates] = value;
+    }
+
+    public T GetValue(Vector2 coordinates) 
+    {
+        return _positionValuePairs.GetValueOrDefault(coordinates);
     }
 }
