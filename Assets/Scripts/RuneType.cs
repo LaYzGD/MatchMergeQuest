@@ -4,4 +4,5 @@ using UnityEngine;
 public class RuneType : ScriptableObject
 {
     [field: SerializeField] public Sprite Sprite { get; private set; }
+    [field: SerializeField] public Sprite SelectedSprite { get; private set; }
 }

@@ -13,3 +13,4 @@ MonoBehaviour:
   m_Name: SpellRune
   m_EditorClassIdentifier: 
   <Sprite>k__BackingField: {fileID: -1871475952466373203, guid: 43fcf0742f3024f419893983d8aa821b, type: 3}
+  <SelectedSprite>k__BackingField: {fileID: 5931628389747189753, guid: 5e06d8a317af068429ac7c87e390ec1d, type: 3}

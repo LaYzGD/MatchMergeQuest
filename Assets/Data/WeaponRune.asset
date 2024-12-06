@@ -13,3 +13,4 @@ MonoBehaviour:
   m_Name: WeaponRune
   m_EditorClassIdentifier: 
   <Sprite>k__BackingField: {fileID: 6780372672472235453, guid: 43fcf0742f3024f419893983d8aa821b, type: 3}
+  <SelectedSprite>k__BackingField: {fileID: 4533506965511194609, guid: 5e06d8a317af068429ac7c87e390ec1d, type: 3}

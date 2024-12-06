@@ -47,6 +47,11 @@ public class GridSystem<T>
         return _positionValuePairs.Keys.ToList();
     }
 
+    public Vector2 GetCenter()
+    {
+        return _origin + new Vector2((_width / 2) + 1, (_height / 2) + 1) * _cellSize;
+    }
+
     public Vector2[,] GetPositionsAsArray() 
     {
         Vector2[,] positionsArray = new Vector2[_height,_width];

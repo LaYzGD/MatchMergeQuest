@@ -5,34 +5,34 @@ using DG.Tweening;
 
 public class MatchSystem : MonoBehaviour
 {
-    [SerializeField] private int _width = 5;
-    [SerializeField] private int _height = 5;
-    [SerializeField] private float _cellSize = 1;
+    [SerializeField] private MatchSystemData _data;
+    [SerializeField] private MatchAudioData _audioData;
     [SerializeField] private Transform _origin;
     [Space]
-    [SerializeField] private Rune _runePrefab;
-    [SerializeField] private List<RuneType> _runeTypes;
+    [SerializeField] private RunePool _runePool;
+    [SerializeField] private VFXPool _sparkVFXPool;
+    [SerializeField] private VFXPool _explosionVFXPool;
+    [SerializeField] private AudioPlayer _audioPlayer;
     [Space]
     [SerializeField] private Camera _mainCamera;
     [SerializeField] private InputReader _inputReader;
     [Space]
-    [SerializeField] private float _swapSpeed = 0.5f;
-    [SerializeField] private Ease _ease;
-    [SerializeField] private float _popDuration = 0.1f;
-    [SerializeField] private float _popSize = 0.1f;
-    [SerializeField] private int _popVibrato = 1;
-    [SerializeField] private float _popElasticity = 0.5f;
-    [Space]
-    [SerializeField] private float _operationsDelay = 0.1f;
+    [SerializeField] private MatchComboUI _comboUI;
 
+    private MatchCombo _matchCombo;
     private GridSystem<GridObject<Rune>> _gridSystem;
-
+    private bool _isOperationPerfoming = false;
     private GridObject<Rune> _selectedCell;
+    private bool _makeExplosion = false;
 
     private void Start()
     {
-        _gridSystem = new GridSystem<GridObject<Rune>>(_width, _height, _cellSize, _origin.position);
+        _gridSystem = new GridSystem<GridObject<Rune>>(_data.Width, _data.Height, _data.CellSize, _origin.position);
+        _matchCombo = new MatchCombo(_data.MaxCombo);
+        _isOperationPerfoming = false;
+        _runePool.Init();
         _gridSystem.OnValueChanged += UpdateGridObjectCoordinates;
+        _matchCombo.OnMaxCombo += CreateExplosion;
         _inputReader.Click += SelectRune;
         _gridSystem.CreateGrid(null);
         InitializeGrid();
@@ -40,11 +40,13 @@ public class MatchSystem : MonoBehaviour
 
     private void FillGridCell(Vector2 pos)
     {
-        Rune rune = Instantiate(_runePrefab, pos, Quaternion.identity);
-        rune.SetType(_runeTypes[Random.Range(0, _runeTypes.Count)]);
+        Rune rune = _runePool.SpawnRune();
+        rune.SetType(_data.RuneTypes[Random.Range(0, _data.RuneTypes.Count)]);
+        rune.transform.position = pos;
         var gridObject = new GridObject<Rune>(_gridSystem, pos);
         gridObject.SetValue(rune);
         _gridSystem.SetValue(pos, gridObject);
+        rune.transform.DOPunchScale(Vector2.one * _data.PopSize, _data.PopDuration, _data.PopVibrato, _data.PopElasticity);
     }
 
     private void InitializeGrid()
@@ -57,6 +59,11 @@ public class MatchSystem : MonoBehaviour
 
     private void SelectRune()
     {
+        if (_isOperationPerfoming)
+        {
+            return;
+        }
+
         Vector2 gridPos;
         bool isSelected;
         var mousePos = _mainCamera.ScreenToWorldPoint(_inputReader.SelectedCellPosition);
@@ -69,6 +76,7 @@ public class MatchSystem : MonoBehaviour
 
         if (_selectedCell != null && _selectedCell == _gridSystem.GetValue(gridPos))
         {
+            _isOperationPerfoming = false;
             DeselectCell();
             return;
         }
@@ -84,6 +92,7 @@ public class MatchSystem : MonoBehaviour
 
     private IEnumerator GameLoop(GridObject<Rune> selectedRune, Vector2 gridPos) 
     {
+        _isOperationPerfoming = true;
         yield return StartCoroutine(SwapRunes(selectedRune, _gridSystem.GetValue(gridPos)));
 
         yield return StartCoroutine(CheckGridLogic());
@@ -99,6 +108,12 @@ public class MatchSystem : MonoBehaviour
             yield return StartCoroutine(MakeRunesFall());
             yield return StartCoroutine(FillEmptyCellsWithNewRunes());
         }
+        else 
+        {
+            _isOperationPerfoming = false;
+            _matchCombo.Reset();
+            _comboUI.ShowText(false);
+        }
     }
 
     private IEnumerator SwapRunes(GridObject<Rune> selectedRune, GridObject<Rune> nextRune)
@@ -109,22 +124,31 @@ public class MatchSystem : MonoBehaviour
         _gridSystem.SetValue(nextRuneCoordinates, selectedRune);
         _gridSystem.SetValue(selectedRuneCoordinates, nextRune);
 
-        selectedRune.Object.transform.DOLocalMove(nextRuneCoordinates, _swapSpeed).SetEase(_ease);
-        nextRune.Object.transform.DOLocalMove(selectedRuneCoordinates, _swapSpeed).SetEase(_ease);
-        
-        yield return new WaitForSeconds(_swapSpeed);
+        selectedRune.Object.transform.DOLocalMove(nextRuneCoordinates, _data.SwapSpeed).SetEase(_data.Ease);
+        nextRune.Object.transform.DOLocalMove(selectedRuneCoordinates, _data.SwapSpeed).SetEase(_data.Ease);
+        //_audioPlayer.PlaySound(_data.SwapSound);
+
+        DeselectCell();
+        yield return new WaitForSecondsRealtime(_data.SwapOperationsDelay);
     }
 
     private IEnumerator DestroyMatchedRunes(List<Vector2> matches) 
     {
+        int counter = 1;
+        _comboUI.ShowText(true);
+
         foreach(var match in matches) 
         {
             var rune = _gridSystem.GetValue(match).Object;
             _gridSystem.SetValue(match, null);
 
-            rune.transform.DOPunchScale(Vector2.one * _popSize, _popDuration, _popVibrato, _popElasticity);
-            yield return new WaitForSeconds(_operationsDelay);
-            rune.gameObject.SetActive(false);
+            rune.transform.DOPunchScale(Vector2.one * _data.PopSize, _data.PopDuration, _data.PopVibrato, _data.PopElasticity);
+            _matchCombo.IncreaseCombo(counter);
+            _comboUI.IncreaseCombo(_matchCombo.Combo);
+            yield return new WaitForSecondsRealtime(_data.DefaultOperationsDelay);
+            _sparkVFXPool.SpawnVFX(match);
+            _audioPlayer.PlaySound(_audioData.PopSound);
+            rune.DestroyRune();
         }
     }
 
@@ -137,35 +161,41 @@ public class MatchSystem : MonoBehaviour
             if (_gridSystem.GetValue(pos) == null)
             {
                 FillGridCell(pos);
-                yield return new WaitForSeconds(_operationsDelay);
+                _audioPlayer.PlaySound(_audioData.CreateSound);
+                yield return new WaitForSecondsRealtime(_data.CreateOperationsDelay);
             }
         }
 
-        DeselectCell();
-
-        StartCoroutine(CheckGridLogic());
+        if (_makeExplosion)
+        {
+            StartCoroutine(DestroyAllRunes());
+        }
+        else
+        {
+            StartCoroutine(CheckGridLogic());
+        }
     }
 
     private IEnumerator MakeRunesFall()
     {
         var positions = _gridSystem.GetPositionsAsArray();
 
-        for (int y = 0; y < _height; y++)
+        for (int y = 0; y < _data.Height; y++)
         {
-            for (int x = 0; x < _width; x++)
+            for (int x = 0; x < _data.Width; x++)
             {
                 if (_gridSystem.GetValue(positions[y,x]) == null) 
                 {
-                    for (int i = y + 1; i < _height; i++)
+                    for (int i = y + 1; i < _data.Height; i++)
                     {
                         var cell = _gridSystem.GetValue(positions[i, x]);
                         if (cell != null) 
                         {
                             var rune = cell.Object;
                             _gridSystem.SetValue(positions[y, x], cell);
-                            rune.transform.DOLocalMove(cell.Coordinates, _swapSpeed).SetEase(_ease);
+                            rune.transform.DOLocalMove(cell.Coordinates, _data.SwapSpeed).SetEase(_data.Ease);
                             _gridSystem.SetValue(positions[i, x], null);
-                            yield return new WaitForSeconds(_operationsDelay);
+                            yield return new WaitForSecondsRealtime(_data.DefaultOperationsDelay);
                             break;
                         }
                     }
@@ -179,9 +209,9 @@ public class MatchSystem : MonoBehaviour
         var positions = _gridSystem.GetPositionsAsArray();
         var matches = new HashSet<Vector2>();
         //HORIZONTAL
-        for (int y = 0; y < _height; y++)
+        for (int y = 0; y < _data.Height; y++)
         {
-            for (int x = 0; x < _width - 2; x++)
+            for (int x = 0; x < _data.Width - 2; x++)
             {
                 var cellA = _gridSystem.GetValue(positions[y, x]);
                 var cellB = _gridSystem.GetValue(positions[y, x + 1]);
@@ -204,9 +234,9 @@ public class MatchSystem : MonoBehaviour
             }
         }
         //VERTICAL
-        for (int x = 0; x < _width; x++)
+        for (int x = 0; x < _data.Width; x++)
         {
-            for (int y = 0; y < _height - 2; y++)
+            for (int y = 0; y < _data.Height - 2; y++)
             {
                 var cellA = _gridSystem.GetValue(positions[y, x]);
                 var cellB = _gridSystem.GetValue(positions[y + 1, x]);
@@ -231,9 +261,49 @@ public class MatchSystem : MonoBehaviour
         return new List<Vector2>(matches);
     }
 
+    private void CreateExplosion()
+    {
+        _makeExplosion = true;
+    }
+
+    private IEnumerator DestroyAllRunes()
+    {
+        var positions = _gridSystem.GetPositions();
+
+        _explosionVFXPool.SpawnVFX(_gridSystem.GetCenter());
+        _audioPlayer.PlaySound(_audioData.ExplodeSound);
+
+        foreach (var position in positions)
+        {
+            var cell = _gridSystem.GetValue(position);
+            if (cell == null)
+            {
+                continue;
+            }
+
+            var rune = cell.Object;
+            _gridSystem.SetValue(position, null);
+            rune.DestroyRune();
+        }
+
+        _makeExplosion = false;
+        StartCoroutine(FillEmptyCellsWithNewRunes());
+        yield return null;
+    }
+
+
     private void SelectCell(Vector2 pos)
     {
-        _selectedCell = _gridSystem.GetValue(pos);
+        var cell = _gridSystem.GetValue(pos);
+        
+        if (cell == null)
+        {
+            return;
+        }
+
+        _audioPlayer.PlaySound(_audioData.SelectSound);
+        _selectedCell = cell;
+        _selectedCell.Object.ShowSelectedSprite(true);
     }
 
     private void UpdateGridObjectCoordinates(Vector2 newCoord, GridObject<Rune> obj)
@@ -245,6 +315,7 @@ public class MatchSystem : MonoBehaviour
 
     private void DeselectCell()
     {
+        _selectedCell.Object.ShowSelectedSprite(false);
         _selectedCell = null;
     }
 
@@ -252,5 +323,6 @@ public class MatchSystem : MonoBehaviour
     {
         _inputReader.Click -= SelectRune;
         _gridSystem.OnValueChanged -= UpdateGridObjectCoordinates;
+        _matchCombo.OnMaxCombo -= CreateExplosion;
     }
 }
