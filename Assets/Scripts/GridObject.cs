@@ -18,6 +18,12 @@ public class GridObject<T>
         _yPos = position.y;
     }
 
+    public void UpdateCoordinates(Vector2 newCoordinates)
+    {
+        _xPos = newCoordinates.x;
+        _yPos = newCoordinates.y;
+    }
+
     public void SetValue(T obj)
     {
         _object = obj;

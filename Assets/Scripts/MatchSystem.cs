@@ -18,6 +18,12 @@ public class MatchSystem : MonoBehaviour
     [Space]
     [SerializeField] private float _swapSpeed = 0.5f;
     [SerializeField] private Ease _ease;
+    [SerializeField] private float _popDuration = 0.1f;
+    [SerializeField] private float _popSize = 0.1f;
+    [SerializeField] private int _popVibrato = 1;
+    [SerializeField] private float _popElasticity = 0.5f;
+    [Space]
+    [SerializeField] private float _operationsDelay = 0.1f;
 
     private GridSystem<GridObject<Rune>> _gridSystem;
 
@@ -26,20 +32,26 @@ public class MatchSystem : MonoBehaviour
     private void Start()
     {
         _gridSystem = new GridSystem<GridObject<Rune>>(_width, _height, _cellSize, _origin.position);
+        _gridSystem.OnValueChanged += UpdateGridObjectCoordinates;
         _inputReader.Click += SelectRune;
         _gridSystem.CreateGrid(null);
         InitializeGrid();
+    }
+
+    private void FillGridCell(Vector2 pos)
+    {
+        Rune rune = Instantiate(_runePrefab, pos, Quaternion.identity);
+        rune.SetType(_runeTypes[Random.Range(0, _runeTypes.Count)]);
+        var gridObject = new GridObject<Rune>(_gridSystem, pos);
+        gridObject.SetValue(rune);
+        _gridSystem.SetValue(pos, gridObject);
     }
 
     private void InitializeGrid()
     {
         foreach (var pos in _gridSystem.GetPositions())
         {
-            Rune rune = Instantiate(_runePrefab, pos, Quaternion.identity);
-            rune.SetType(_runeTypes[Random.Range(0, _runeTypes.Count)]);
-            var gridObject = new GridObject<Rune>(_gridSystem, pos);
-            gridObject.SetValue(rune);
-            _gridSystem.SetValue(pos, gridObject);
+            FillGridCell(pos);
         }
     }
 
@@ -74,20 +86,32 @@ public class MatchSystem : MonoBehaviour
     {
         yield return StartCoroutine(SwapRunes(selectedRune, _gridSystem.GetValue(gridPos)));
 
+        yield return StartCoroutine(CheckGridLogic());
+    }
+
+    private IEnumerator CheckGridLogic()
+    {
         var matches = FindMatches();
 
-        yield return StartCoroutine(DestroyMatchedRunes(matches));
-
-        DeselectCell();
+        if (matches.Count > 0)
+        {
+            yield return StartCoroutine(DestroyMatchedRunes(matches));
+            yield return StartCoroutine(MakeRunesFall());
+            yield return StartCoroutine(FillEmptyCellsWithNewRunes());
+        }
     }
 
     private IEnumerator SwapRunes(GridObject<Rune> selectedRune, GridObject<Rune> nextRune)
     {
-        selectedRune.Object.transform.DOLocalMove(nextRune.Coordinates, _swapSpeed).SetEase(_ease);
-        nextRune.Object.transform.DOLocalMove(selectedRune.Coordinates, _swapSpeed).SetEase(_ease);
-        _gridSystem.SetValue(nextRune.Coordinates, selectedRune);
-        _gridSystem.SetValue(selectedRune.Coordinates, nextRune);
+        var selectedRuneCoordinates = selectedRune.Coordinates;
+        var nextRuneCoordinates = nextRune.Coordinates;
 
+        _gridSystem.SetValue(nextRuneCoordinates, selectedRune);
+        _gridSystem.SetValue(selectedRuneCoordinates, nextRune);
+
+        selectedRune.Object.transform.DOLocalMove(nextRuneCoordinates, _swapSpeed).SetEase(_ease);
+        nextRune.Object.transform.DOLocalMove(selectedRuneCoordinates, _swapSpeed).SetEase(_ease);
+        
         yield return new WaitForSeconds(_swapSpeed);
     }
 
@@ -98,8 +122,55 @@ public class MatchSystem : MonoBehaviour
             var rune = _gridSystem.GetValue(match).Object;
             _gridSystem.SetValue(match, null);
 
-            yield return new WaitForSeconds(0.1f);
+            rune.transform.DOPunchScale(Vector2.one * _popSize, _popDuration, _popVibrato, _popElasticity);
+            yield return new WaitForSeconds(_operationsDelay);
             rune.gameObject.SetActive(false);
+        }
+    }
+
+    private IEnumerator FillEmptyCellsWithNewRunes()
+    {
+        var positions = _gridSystem.GetPositions();
+
+        foreach (var pos in positions)
+        {
+            if (_gridSystem.GetValue(pos) == null)
+            {
+                FillGridCell(pos);
+                yield return new WaitForSeconds(_operationsDelay);
+            }
+        }
+
+        DeselectCell();
+
+        StartCoroutine(CheckGridLogic());
+    }
+
+    private IEnumerator MakeRunesFall()
+    {
+        var positions = _gridSystem.GetPositionsAsArray();
+
+        for (int y = 0; y < _height; y++)
+        {
+            for (int x = 0; x < _width; x++)
+            {
+                if (_gridSystem.GetValue(positions[y,x]) == null) 
+                {
+                    for (int i = y + 1; i < _height; i++)
+                    {
+                        var cell = _gridSystem.GetValue(positions[i, x]);
+                        if (cell != null) 
+                        {
+                            var rune = cell.Object;
+                            _gridSystem.SetValue(positions[y, x], cell);
+                            rune.transform.DOLocalMove(cell.Coordinates, _swapSpeed).SetEase(_ease);
+                            _gridSystem.SetValue(positions[i, x], null);
+                            yield return new WaitForSeconds(_operationsDelay);
+                            break;
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -122,7 +193,6 @@ public class MatchSystem : MonoBehaviour
                     continue;
                 }
 
-                //print($"A: {cellA.Coordinates}, B: {cellB.Coordinates}, C: {cellC.Coordinates}");
 
                 if (cellA.Object.Type == cellB.Object.Type
                         && cellB.Object.Type == cellC.Object.Type)
@@ -166,6 +236,13 @@ public class MatchSystem : MonoBehaviour
         _selectedCell = _gridSystem.GetValue(pos);
     }
 
+    private void UpdateGridObjectCoordinates(Vector2 newCoord, GridObject<Rune> obj)
+    {
+        if (obj == null) return;
+
+        obj.UpdateCoordinates(newCoord);
+    }
+
     private void DeselectCell()
     {
         _selectedCell = null;
@@ -174,5 +251,6 @@ public class MatchSystem : MonoBehaviour
     private void OnDestroy()
     {
         _inputReader.Click -= SelectRune;
+        _gridSystem.OnValueChanged -= UpdateGridObjectCoordinates;
     }
 }

@@ -174,8 +174,13 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 1bc6eba9486a4a1468db6c86a0e450b8, type: 2}
   _mainCamera: {fileID: 519420031}
   _inputReader: {fileID: 1382051541}
-  _swapSpeed: 0.5
+  _swapSpeed: 0.25
   _ease: 5
+  _popDuration: 0.1
+  _popSize: 0.1
+  _popVibrato: 1
+  _popElasticity: 0.5
+  _operationsDelay: 0.1
 --- !u!1 &519420028
 GameObject:
   m_ObjectHideFlags: 0

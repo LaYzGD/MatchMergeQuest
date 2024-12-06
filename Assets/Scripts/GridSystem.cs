@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -9,7 +10,9 @@ public class GridSystem<T>
     private float _cellSize;
     private Vector2 _origin;
     private Dictionary<Vector2, T> _positionValuePairs;
-    
+
+    public event Action<Vector2, T> OnValueChanged; 
+
     public GridSystem(int width, int height, float cellSize, Vector2 origin)
     {
         _width = width;
@@ -90,6 +93,7 @@ public class GridSystem<T>
     public void SetValue(Vector2 coordinates, T value) 
     {
         _positionValuePairs[coordinates] = value;
+        OnValueChanged?.Invoke(coordinates, value);
     }
 
     public T GetValue(Vector2 coordinates) 
