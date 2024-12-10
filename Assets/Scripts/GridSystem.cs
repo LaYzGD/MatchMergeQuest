@@ -49,7 +49,7 @@ public class GridSystem<T>
 
     public Vector2 GetCenter()
     {
-        return _origin + new Vector2((_width / 2) + 1, (_height / 2) + 1) * _cellSize;
+        return _origin + new Vector2(_width / 2, _height / 2) * _cellSize;
     }
 
     public Vector2[,] GetPositionsAsArray() 
