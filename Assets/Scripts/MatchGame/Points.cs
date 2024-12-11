@@ -1,16 +1,18 @@
 using UnityEngine;
+using Zenject;
 
 public class Points : MonoBehaviour
 {
-    [SerializeField] private LevelUpData _levelUpData;
-    [Space]
     [SerializeField] private Observer<int> _scorePoints;
     [SerializeField] private Observer<int> _levelPoints;
 
     private int _currentRequiredXP;
+    private LevelUpData _levelUpData;
 
-    private void Start()
+    [Inject]
+    public void Construct(LevelUpData data)
     {
+        _levelUpData = data;
         _levelPoints.Set(_levelUpData.StartingLevel, false);
         _currentRequiredXP = _levelUpData.StartRequiredXP;
     }

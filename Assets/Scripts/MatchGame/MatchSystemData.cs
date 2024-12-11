@@ -19,4 +19,5 @@ public class MatchSystemData : ScriptableObject
     [field: SerializeField] public float CreateOperationsDelay { get; private set; } = 0.2f;
     [field: SerializeField] public float SwapOperationsDelay { get; private set; } = 0.5f;
     [field: SerializeField] public int MaxCombo { get; private set; } = 20;
+    [field: SerializeField] public int PointsPerRune { get; private set; } = 100;
 }

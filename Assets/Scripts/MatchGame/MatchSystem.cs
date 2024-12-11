@@ -2,28 +2,44 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using DG.Tweening;
+using Zenject;
 
 public class MatchSystem : MonoBehaviour
 {
-    [SerializeField] private MatchSystemData _data;
-    [SerializeField] private MatchAudioData _audioData;
     [SerializeField] private Transform _origin;
     [Space]
     [SerializeField] private RunePool _runePool;
     [SerializeField] private VFXPool _sparkVFXPool;
     [SerializeField] private VFXPool _explosionVFXPool;
-    [SerializeField] private AudioPlayer _audioPlayer;
-    [Space]
-    [SerializeField] private Camera _mainCamera;
-    [SerializeField] private InputReader _inputReader;
-    [Space]
-    [SerializeField] private MatchComboUI _comboUI;
+
+    private AudioPlayer _audioPlayer;
+    private Camera _mainCamera;
+    private InputReader _inputReader;
+    private MatchComboUI _comboUI;
+    private Points _points;
+
+    private MatchSystemData _data;
+    private MatchAudioData _audioData;
 
     private MatchCombo _matchCombo;
     private GridSystem<GridObject<Rune>> _gridSystem;
     private bool _isOperationPerfoming = false;
     private GridObject<Rune> _selectedCell;
     private bool _makeExplosion = false;
+
+    public bool IsRewardPanelShown { get; set; } = false;
+
+    [Inject]
+    public void Construct(AudioPlayer audioPlayer, Camera mainCamera, InputReader inputReader, MatchComboUI comboUi, MatchSystemData data, MatchAudioData audioData, Points points)
+    {
+        _audioPlayer = audioPlayer;
+        _mainCamera = mainCamera;
+        _inputReader = inputReader;
+        _comboUI = comboUi;
+        _data = data;
+        _audioData = audioData;
+        _points = points;
+    }
 
     private void Start()
     {
@@ -59,7 +75,7 @@ public class MatchSystem : MonoBehaviour
 
     private void SelectRune()
     {
-        if (_isOperationPerfoming)
+        if (_isOperationPerfoming || IsRewardPanelShown)
         {
             return;
         }
@@ -148,6 +164,7 @@ public class MatchSystem : MonoBehaviour
             yield return new WaitForSecondsRealtime(_data.DefaultOperationsDelay);
             _sparkVFXPool.SpawnVFX(match);
             _audioPlayer.PlaySound(_audioData.PopSound);
+            _points.AddScore(_data.PointsPerRune);
             rune.DestroyRune();
         }
     }
@@ -283,6 +300,7 @@ public class MatchSystem : MonoBehaviour
 
             var rune = cell.Object;
             _gridSystem.SetValue(position, null);
+            _points.AddScore(_data.PointsPerRune);
             rune.DestroyRune();
         }
 
@@ -290,7 +308,6 @@ public class MatchSystem : MonoBehaviour
         StartCoroutine(FillEmptyCellsWithNewRunes());
         yield return null;
     }
-
 
     private void SelectCell(Vector2 pos)
     {
