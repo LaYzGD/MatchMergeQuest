@@ -39,7 +39,7 @@ public class MatchGameUI : MonoBehaviour
     public void ShowRewardPanel(bool flag) 
     {
         _rewardPanel.SetActive(flag);
-        _matchSystem.IsRewardPanelShown = flag;
+        _matchSystem.IsUIPanelShown = flag;
     }
 
     public void UpdateXpBarCurrentValue(int xp)

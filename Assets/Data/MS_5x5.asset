@@ -29,4 +29,5 @@ MonoBehaviour:
   <DefaultOperationsDelay>k__BackingField: 0.1
   <CreateOperationsDelay>k__BackingField: 0.15
   <SwapOperationsDelay>k__BackingField: 0.3
-  <MaxCombo>k__BackingField: 15
+  <MaxCombo>k__BackingField: 20
+  <PointsPerRune>k__BackingField: 100

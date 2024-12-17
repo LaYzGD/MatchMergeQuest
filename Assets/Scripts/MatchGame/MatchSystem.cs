@@ -27,7 +27,7 @@ public class MatchSystem : MonoBehaviour
     private GridObject<Rune> _selectedCell;
     private bool _makeExplosion = false;
 
-    public bool IsRewardPanelShown { get; set; } = false;
+    public bool IsUIPanelShown { get; set; } = false;
 
     [Inject]
     public void Construct(AudioPlayer audioPlayer, Camera mainCamera, InputReader inputReader, MatchComboUI comboUi, MatchSystemData data, MatchAudioData audioData, Points points)
@@ -75,7 +75,7 @@ public class MatchSystem : MonoBehaviour
 
     private void SelectRune()
     {
-        if (_isOperationPerfoming || IsRewardPanelShown)
+        if (_isOperationPerfoming || IsUIPanelShown)
         {
             return;
         }
@@ -287,8 +287,7 @@ public class MatchSystem : MonoBehaviour
     {
         var positions = _gridSystem.GetPositions();
 
-        _explosionVFXPool.SpawnVFX(_gridSystem.GetCenter());
-        _audioPlayer.PlaySound(_audioData.ExplodeSound);
+        //_explosionVFXPool.SpawnVFX(_gridSystem.GetCenter());
 
         foreach (var position in positions)
         {
@@ -297,11 +296,13 @@ public class MatchSystem : MonoBehaviour
             {
                 continue;
             }
-
+            _explosionVFXPool.SpawnVFX(cell.Coordinates);
+            _audioPlayer.PlaySound(_audioData.ExplodeSound);
             var rune = cell.Object;
             _gridSystem.SetValue(position, null);
             _points.AddScore(_data.PointsPerRune);
             rune.DestroyRune();
+            yield return new WaitForSecondsRealtime(_data.DefaultOperationsDelay);
         }
 
         _makeExplosion = false;
@@ -334,6 +335,11 @@ public class MatchSystem : MonoBehaviour
     {
         _selectedCell.Object.ShowSelectedSprite(false);
         _selectedCell = null;
+    }
+
+    public void BlockGame(bool flag) 
+    {
+        IsUIPanelShown = flag;
     }
 
     private void OnDestroy()

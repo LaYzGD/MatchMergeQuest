@@ -7,6 +7,7 @@ public class GameSceneInstaller : MonoInstaller
     [SerializeField] private LevelUpData _levelUpData;
     [SerializeField] private MatchSystemData _matchSystemData;
     [SerializeField] private MatchAudioData _matchAudioData;
+    [SerializeField] private InventorySlotData _inventorySlotData;
     [Space]
     [Header("Logic")]
     [SerializeField] private MatchSystem _matchSystem;
@@ -26,6 +27,7 @@ public class GameSceneInstaller : MonoInstaller
         Container.BindInterfacesAndSelfTo<LevelUpData>().FromInstance(_levelUpData).AsSingle();
         Container.BindInterfacesAndSelfTo<MatchSystemData>().FromInstance(_matchSystemData).AsSingle();
         Container.BindInterfacesAndSelfTo<MatchAudioData>().FromInstance(_matchAudioData).AsSingle();
+        Container.BindInterfacesAndSelfTo<InventorySlotData>().FromInstance(_inventorySlotData).AsSingle();
     }
 
     private void InstallMonoBeh()
