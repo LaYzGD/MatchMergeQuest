@@ -12,8 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 554055294c0bc104ab7e8648e6199de7, type: 3}
   m_Name: InventoryData
   m_EditorClassIdentifier: 
-  <AllCommonWeapons>k__BackingField: []
+  <AllCommonWeapons>k__BackingField:
+  - {fileID: 11400000, guid: 99e9ad416bc0a3744b765d832b80b18b, type: 2}
   <AllCommonArmor>k__BackingField:
   - {fileID: 11400000, guid: 8c071980f624a1b4e997df8385116904, type: 2}
   - {fileID: 11400000, guid: e1b8e59d645022b468a06d7a1b19d456, type: 2}
-  <AllLegendaryWeapons>k__BackingField: []
+  <AllLegendaryWeapons>k__BackingField:
+  - {fileID: 11400000, guid: 1c81f27139065574c98b3d4ea1e50ed6, type: 2}
+  - {fileID: 11400000, guid: b8346841aa53cb04ca11b6e164fcbd44, type: 2}
+  <DefaultLuck>k__BackingField: 0.1
+  <MaxtLuck>k__BackingField: 1
+  <LuckIncreasement>k__BackingField: 0.05

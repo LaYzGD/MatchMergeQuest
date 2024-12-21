@@ -9,6 +9,7 @@ public class InventoryItemType : ScriptableObject
     [field: SerializeField] public int Attack { get; private set; }
     [field: SerializeField] public int Health { get; private set; }
     [field: SerializeField] public InventoryItemType NextUpgrade { get; private set; }
+    [field: SerializeField] public AnimatorOverrideController AnimatorOverrideController { get; private set; }
 }
 
 [Serializable]

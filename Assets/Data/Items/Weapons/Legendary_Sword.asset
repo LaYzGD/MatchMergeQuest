@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2704f0683f129464196bac7d5dbcdd3d, type: 3}
+  m_Name: Legendary_Sword
+  m_EditorClassIdentifier: 
+  <Type>k__BackingField: 0
+  <Sprite>k__BackingField: {fileID: -8675077286395491812, guid: 21ecc1e2056860542959a1013af7eefc, type: 3}
+  <Attack>k__BackingField: 15
+  <Health>k__BackingField: 0
+  <NextUpgrade>k__BackingField: {fileID: 0}
+  <AnimatorOverrideController>k__BackingField: {fileID: 22100000, guid: 6904f53e42d957248989caf6002f769d, type: 2}
